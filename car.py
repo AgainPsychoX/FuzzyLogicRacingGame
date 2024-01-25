@@ -4,7 +4,7 @@ import math
 car_image = pygame.transform.scale(pygame.image.load('car.png'), (33, 22))
 
 class Car(pygame.sprite.Sprite):
-    MAX_VELOCITY_FORWARD = 150
+    MAX_VELOCITY_FORWARD = 200
     MAX_VELOCITY_BACKWARD = 20
     ACCELERATION_FACTOR_FORWARD = 100
     ACCELERATION_FACTOR_BACKWARD = 100

@@ -5,6 +5,7 @@ import math
 from car import Car
 
 pygame.init()
+pygame.font.init()
 
 FPS = 60
 MAX_WIDTH = 1600
@@ -21,9 +22,16 @@ if map_image.get_width() > MAX_WIDTH or map_image.get_height() > MAX_HEIGHT:
 screen = pygame.display.set_mode((map_image.get_width(), map_image.get_height()))
 pygame.display.set_caption("Fuzzy Racing Game")
 
+try:
+    my_font = pygame.font.SysFont('consolas', 16)
+except:
+    my_font = pygame.font.SysFont('dejavusansmono', 16)
+    pass
+
 clock = pygame.time.Clock()
 
 car = Car((screen.get_width() // 2, screen.get_height() // 2))
+car.angle = math.radians(90)
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(car)
@@ -43,6 +51,9 @@ while running:
 
     screen.blit(map_image, (0, 0))
     all_sprites.draw(screen)
+
+    text_surface = my_font.render(f'velocity: {car.velocity:.2f}', True, (0, 0, 0))
+    screen.blit(text_surface, (0, 0))
 
     pygame.display.flip()
 
