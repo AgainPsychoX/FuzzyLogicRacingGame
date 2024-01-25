@@ -7,10 +7,6 @@ The project tries to apply fuzzy logic to control car in simple racing game.
 
 ### To-do
 
-+ Prepare variables:
-	+ Car velocity
-	+ Distance to walls
-+ Print variables for debugging (on game screen)
 + Use scikit-fuzzy
 	+ Create input variables
 	+ Plot activation of inputs
