@@ -3,6 +3,7 @@ import sys
 import math
 
 from car import Car
+from map import Map
 
 pygame.init()
 pygame.font.init()
@@ -11,17 +12,10 @@ FPS = 60
 MAX_WIDTH = 1600
 MAX_HEIGHT = 900
 
-map_image = pygame.image.load('maps/1.png') 
-if map_image.get_width() > MAX_WIDTH or map_image.get_height() > MAX_HEIGHT:
-    width_scaling_factor = MAX_WIDTH / map_image.get_width()
-    height_scaling_factor = MAX_HEIGHT / map_image.get_height()
-    scaling_factor = min(width_scaling_factor, height_scaling_factor)
-    map_image = pygame.transform.scale(map_image, (int(map_image.get_width() * scaling_factor),
-                                                   int(map_image.get_height() * scaling_factor)))
+map = Map('maps/1.png', MAX_WIDTH, MAX_HEIGHT) 
+map.default_wall_condition = lambda x_y, map : map.surface.get_at(x_y)[1] > 100 # green
 
-starting_position = (map_image.get_width() // 2, map_image.get_height() // 2)
-
-screen = pygame.display.set_mode((map_image.get_width(), map_image.get_height()))
+screen = pygame.display.set_mode((map.width, map.height))
 pygame.display.set_caption("Fuzzy Racing Game")
 
 try:
@@ -44,23 +38,13 @@ def draw_text(
 
 clock = pygame.time.Clock()
 
-car = Car(starting_position)
-car.angle = math.radians(90)
+car = Car(map.starting_position, map.starting_angle)
 
-def cast_ray_to_wall(position, a):
-    MAX_DISTANCE = 300
-    dx, dy = math.sin(a), math.cos(a)
-    for d in range(0, MAX_DISTANCE, 1):
-        x = int(position[0] + d * dx)
-        if x < 0 or map_image.get_width() <= x:
-            return None
-        y = int(position[1] + d * dy)
-        if y < 0 or map_image.get_height() <= y:
-            return None
-        c = map_image.get_at((x, y))
-        if c[1] > 100: # if green-ish
-            return (d, a, x, y, c)
-    return None
+sensors_angles = {
+    'head': math.radians(0),
+    'left': math.radians(30),
+    'right': math.radians(-30),
+}
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(car)
@@ -76,33 +60,24 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
             if event.key == pygame.K_r:
-                car.position = list(starting_position)
-                car.angle = math.radians(90)
+                car.position = list(map.starting_position)
+                car.angle = map.starting_angle
                 car.velocity = 0
 
     all_sprites.update(dt=dt)
 
-    wall_sensors_angles = {
-        'head': 0,
-        'left': math.radians(30),
-        'right': math.radians(-30),
-    }
-
-    screen.blit(map_image, (0, 0))
+    screen.blit(map.surface, (0, 0))
     all_sprites.draw(screen)
 
-    wall_ray_casts = {k: cast_ray_to_wall(car.position, car.angle + v) 
-                      for k, v in wall_sensors_angles.items()}
+    wall_ray_casts = {k: map.cast_ray_to_wall(car.position, car.angle + v) 
+                      for k, v in sensors_angles.items()}
 
     for k, v in wall_ray_casts.items():
-        if v is not None:
-            pygame.draw.line(screen, (99, 20, 20), 
-                             car.rect.center, (v[2], v[3]), 
-                             width=2)
+        v.draw(screen, pygame.Color(99, 20, 20), width=2)
 
     draw_text(f'velocity={car.velocity:.1f}\n' +
               'walls distances:\n' + 
-              '\n'.join([f'  {k}={v[0] if v is not None else "too far"}' 
+              '\n'.join([f'  {k}={v.distance if v.hit else "too far"}' 
                          for k, v in wall_ray_casts.items()]), 
               (0, 0), color=(255, 255, 255))
 

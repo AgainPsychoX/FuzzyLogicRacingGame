@@ -1,6 +1,8 @@
 import pygame
 import math
 
+from map import Coordinate
+
 car_image = pygame.transform.scale(pygame.image.load('car.png'), (33, 22))
 
 class Car(pygame.sprite.Sprite):
@@ -12,13 +14,12 @@ class Car(pygame.sprite.Sprite):
     IDLE_DECAY_FACTOR = 5
     STEER_DECAY_FACTOR = 5
 
-    def __init__(self, position):
+    def __init__(self, position: Coordinate, angle: float = 0):
         super().__init__()
         self.base_image = car_image
         self.position = list(position)
-        self.velocity = 0
-        self.angle = 0 # radians
-        self.total_velocity = 0
+        self.velocity: float = 0
+        self.angle = angle # radians
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
