@@ -1,9 +1,18 @@
+from time import sleep
 import pygame
 import sys
 import math
+import numpy as np
+import skfuzzy
+import matplotlib
+import matplotlib.pyplot as plt
+from fuzzy_car_controller import FuzzyCarController
 
-from car import Car
 from map import Map
+from car import Car, CarController
+from keyboard_car_controller import KeyboardCarController
+
+matplotlib.use('module://pygame_matplotlib.backend_pygame')
 
 pygame.init()
 pygame.font.init()
@@ -46,6 +55,12 @@ sensors_angles = {
     'right': math.radians(-30),
 }
 
+car_controllers = [
+    FuzzyCarController(car),
+    KeyboardCarController(car)
+]
+car_controller: CarController = car_controllers[0]
+
 all_sprites = pygame.sprite.Group()
 all_sprites.add(car)
 
@@ -57,20 +72,25 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
                 running = False
             if event.key == pygame.K_r:
                 car.position = list(map.starting_position)
                 car.angle = map.starting_angle
                 car.velocity = 0
+            if event.key == pygame.K_c:
+                car_controller = car_controllers[(car_controllers.index(car_controller) + 1) % len(car_controllers)]
+                print(f'Switching to {type(car_controller).__name__}')
+                sleep(0.100)
 
+    wall_ray_casts = {k: map.cast_ray_to_wall(car.position, car.angle + v) 
+                      for k, v in sensors_angles.items()}
+
+    car_controller.update(dt=dt, sensors=wall_ray_casts)
     all_sprites.update(dt=dt)
 
     screen.blit(map.surface, (0, 0))
     all_sprites.draw(screen)
-
-    wall_ray_casts = {k: map.cast_ray_to_wall(car.position, car.angle + v) 
-                      for k, v in sensors_angles.items()}
 
     for k, v in wall_ray_casts.items():
         v.draw(screen, pygame.Color(99, 20, 20), width=2)
@@ -80,6 +100,8 @@ while running:
               '\n'.join([f'  {k}={v.distance if v.hit else "too far"}' 
                          for k, v in wall_ray_casts.items()]), 
               (0, 0), color=(255, 255, 255))
+
+    # TODO: draw fuzzy controller graphs for variables activation
 
     pygame.display.flip()
 

@@ -1,1 +1,5 @@
-pygame==2.5.2
+matplotlib~=3.8.2
+numpy~=1.26.3
+pygame~=2.5.2
+pygame-matplotlib~=0.2.1
+scikit-fuzzy~=0.4.2
