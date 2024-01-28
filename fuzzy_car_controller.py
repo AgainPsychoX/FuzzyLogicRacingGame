@@ -1,23 +1,19 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import skfuzzy
 import skfuzzy.control
-from skfuzzy.control.visualization import FuzzyVariableVisualizer
 
 from map import RayCastResult
 from car import Car, CarController
-
-class CustomFuzzyVariableVisualizer(FuzzyVariableVisualizer):
-    def __init__(self, fuzzy_var, fig, ax):
-        super().__init__(fuzzy_var)
-        plt.close() # close subplot created in default visualizer initializer
-        self.fig = fig
-        self.ax = ax
+from visualization import MyFuzzyVariableVisualizer
 
 class FuzzyCarController(CarController):
     def __init__(self, car: Car):
         super().__init__(car)
+
+        self.fig = None
 
         # TODO: more dynamic, based on sensor names/angles
         self.setup_inputs()
@@ -97,19 +93,7 @@ class FuzzyCarController(CarController):
         # self.update_simulation(sensors) # need to be called separately
         super().update(dt, *args, **kwargs)
 
-    def draw(self, surface, rect):
-        velocity, left, head, right = self.inputs
-        gas, brake, steer = self.outputs
-
-        # TODO: rect specifies area and coords to draw to.
-        #   The area should be split into len(inputs) + len(outputs) graphs,
-        #   Most likely there will be 3 inputs (left, head, right distances)
-        #   and 3 outputs (break, gas, steer), so the area should be divided
-        #   into 3x2, 2x3 or 1x6, depending on ratio of width/height.
-        #   OR instead doing this here, have it in `main.py` loop or as function`
-        pass
-
-    def visualize(self, width: float, height: float):
+    def setup_visualization(self, width: float, height: float):
         velocity, left, head, right = self.inputs
         gas, brake, steer = self.outputs
 
@@ -117,12 +101,29 @@ class FuzzyCarController(CarController):
         fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
         gs = gridspec.GridSpec(3, 3, figure=fig)
 
-        CustomFuzzyVariableVisualizer(velocity, fig, plt.subplot(gs[0, 2])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(left,     fig, plt.subplot(gs[1, 0])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(head,     fig, plt.subplot(gs[1, 1])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(right,    fig, plt.subplot(gs[1, 2])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(gas,      fig, plt.subplot(gs[2, 0])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(brake,    fig, plt.subplot(gs[2, 1])).view(sim=self.simulation)
-        CustomFuzzyVariableVisualizer(steer,    fig, plt.subplot(gs[2, 2])).view(sim=self.simulation)
+        self.visualizers = [
+            MyFuzzyVariableVisualizer(velocity, plt.subplot(gs[0, 2])),
+            # MyFuzzyVariableVisualizer(left,     plt.subplot(gs[1, 0])),
+            # MyFuzzyVariableVisualizer(head,     plt.subplot(gs[1, 1])),
+            # MyFuzzyVariableVisualizer(right,    plt.subplot(gs[1, 2])),
+            # MyFuzzyVariableVisualizer(gas,      plt.subplot(gs[2, 0])),
+            # MyFuzzyVariableVisualizer(brake,    plt.subplot(gs[2, 1])),
+            # MyFuzzyVariableVisualizer(steer,    plt.subplot(gs[2, 2])),
+        ]
+        self.fig = fig
 
-        return fig
+        print('Done visualization setup')
+
+    def visualize(self, width: float, height: float):
+        if self.fig is None:
+            self.setup_visualization(width, height)
+
+        # self.fig.clear() # why doesn't work with it?
+        for v in self.visualizers:
+            v.ax.clear()
+            # start = time.time()
+            v.view(sim=self.simulation)
+            # end = time.time()
+            # print((end - start))
+
+        return self.fig

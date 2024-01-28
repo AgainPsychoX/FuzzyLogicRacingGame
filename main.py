@@ -118,7 +118,7 @@ while running:
     surf = pygame.image.frombuffer(buffer, w_h, "RGBA")
     screen.blit(surf, (map.width, 0))
 
-    plt.close() 
+    # plt.close() 
 
     pygame.display.flip()
 
