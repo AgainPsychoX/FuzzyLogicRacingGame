@@ -89,7 +89,7 @@ class FuzzyCarController(CarController):
         self.brake = self.simulation.output['brake']
         self.steer = self.simulation.output['steer']
 
-    def update(self, dt: float, sensors: dict[str, RayCastResult], *args, **kwargs):
+    def update(self, dt: float, *args, **kwargs):
         # self.update_simulation(sensors) # need to be called separately
         super().update(dt, *args, **kwargs)
 
@@ -103,12 +103,12 @@ class FuzzyCarController(CarController):
 
         self.visualizers = [
             MyFuzzyVariableVisualizer(velocity, plt.subplot(gs[0, 2])),
-            # MyFuzzyVariableVisualizer(left,     plt.subplot(gs[1, 0])),
-            # MyFuzzyVariableVisualizer(head,     plt.subplot(gs[1, 1])),
-            # MyFuzzyVariableVisualizer(right,    plt.subplot(gs[1, 2])),
-            # MyFuzzyVariableVisualizer(gas,      plt.subplot(gs[2, 0])),
-            # MyFuzzyVariableVisualizer(brake,    plt.subplot(gs[2, 1])),
-            # MyFuzzyVariableVisualizer(steer,    plt.subplot(gs[2, 2])),
+            MyFuzzyVariableVisualizer(left,     plt.subplot(gs[1, 0])),
+            MyFuzzyVariableVisualizer(head,     plt.subplot(gs[1, 1])),
+            MyFuzzyVariableVisualizer(right,    plt.subplot(gs[1, 2])),
+            MyFuzzyVariableVisualizer(gas,      plt.subplot(gs[2, 0])),
+            MyFuzzyVariableVisualizer(brake,    plt.subplot(gs[2, 1])),
+            MyFuzzyVariableVisualizer(steer,    plt.subplot(gs[2, 2])),
         ]
         self.fig = fig
 
@@ -118,12 +118,7 @@ class FuzzyCarController(CarController):
         if self.fig is None:
             self.setup_visualization(width, height)
 
-        # self.fig.clear() # why doesn't work with it?
         for v in self.visualizers:
-            v.ax.clear()
-            # start = time.time()
             v.view(sim=self.simulation)
-            # end = time.time()
-            # print((end - start))
 
         return self.fig

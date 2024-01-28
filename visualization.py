@@ -6,6 +6,8 @@ from scikit-fuzzy 0.4.2, in hopes to improve performance and visuals.
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from skfuzzy.fuzzymath.fuzzy_ops import interp_membership
 from skfuzzy.control.fuzzyvariable import FuzzyVariable, Term
 from skfuzzy.control.controlsystem import CrispValueCalculator, ControlSystem, ControlSystemSimulation
@@ -34,8 +36,8 @@ class MyFuzzyVariableVisualizer(object):
                              "with a `FuzzyVariable` or a `Term`.")
 
         if ax is not None:
-            self.fig = fig
-            self.ax = ax
+            self.fig: Figure = fig
+            self.ax: Axes = ax
         else:
             self.fig, self.ax = plt.subplots()
 
@@ -111,6 +113,8 @@ class MyFuzzyVariableVisualizer(object):
         return self.fig, self.ax
 
     def _init_plot(self):
+        self.ax.clear()
+
         # start = time.time()
         # end = time.time()
         # print((end - start))
