@@ -6,13 +6,14 @@ import numpy as np
 import skfuzzy
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.backends.backend_agg as agg
 from fuzzy_car_controller import FuzzyCarController
 
 from map import Map
 from car import Car, CarController
 from keyboard_car_controller import KeyboardCarController
 
-matplotlib.use('module://pygame_matplotlib.backend_pygame')
+matplotlib.use("Agg")
 
 pygame.init()
 pygame.font.init()
@@ -20,11 +21,12 @@ pygame.font.init()
 FPS = 60
 MAX_WIDTH = 1600
 MAX_HEIGHT = 900
+CHARTS_AREA_WIDTH = 600
 
-map = Map('maps/1.png', MAX_WIDTH, MAX_HEIGHT) 
+map = Map('maps/1.png', MAX_WIDTH - CHARTS_AREA_WIDTH, MAX_HEIGHT) 
 map.default_wall_condition = lambda x_y, map : map.surface.get_at(x_y)[1] > 100 # green
 
-screen = pygame.display.set_mode((map.width, map.height))
+screen = pygame.display.set_mode((map.width + CHARTS_AREA_WIDTH, map.height))
 pygame.display.set_caption("Fuzzy Racing Game")
 
 try:
@@ -55,11 +57,10 @@ sensors_angles = {
     'right': math.radians(-30),
 }
 
-car_controllers = [
-    FuzzyCarController(car),
-    KeyboardCarController(car)
-]
-car_controller: CarController = car_controllers[0]
+keyboard_car_controller = KeyboardCarController(car)
+fuzzy_car_controller = FuzzyCarController(car)
+car_controllers = [ fuzzy_car_controller, keyboard_car_controller ]
+car_controller: CarController = car_controllers[1]
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(car)
@@ -86,7 +87,21 @@ while running:
     wall_ray_casts = {k: map.cast_ray_to_wall(car.position, car.angle + v) 
                       for k, v in sensors_angles.items()}
 
-    car_controller.update(dt=dt, sensors=wall_ray_casts)
+    try:
+        fuzzy_car_controller.update_simulation(sensors=wall_ray_casts)
+    except ValueError as error:
+        print('Error updating simulation:', error)
+        try:
+            fuzzy_car_controller.simulation.print_state()
+            # Note: requires manual adding str(x) to skfuzzy code in some places to (partially) work
+            #   (like when it says about __format__ or something), then still it will error on defuzzification,
+            #   but it still provides good explanation of the current state (without zero area consequent terms).
+            # TODO: add pull request to skfuzzy to fix this issue?
+        except ValueError as error:
+            print('Further error printing out state:', error)
+        sleep(99)
+
+    car_controller.update(dt=dt)
     all_sprites.update(dt=dt)
 
     screen.blit(map.surface, (0, 0))
@@ -102,6 +117,24 @@ while running:
               (0, 0), color=(255, 255, 255))
 
     # TODO: draw fuzzy controller graphs for variables activation
+    # mmmmmmm log V
+    # mmmmmmm L H R
+    # mmmmmmm G B S
+
+    # f.set_figheight(map.height / 100)
+    # f.set_figwidth(CHARTS_AREA_WIDTH / 100)
+
+    fig = fuzzy_car_controller.visualize()
+    canvas = agg.FigureCanvasAgg(fig)
+    # canvas.draw()
+    buffer, w_h = canvas.print_to_buffer()
+    # renderer = canvas.get_renderer()
+    # raw_data = renderer.buffer_rgba()
+    # surf = pygame.image.frombuffer(raw_data, canvas.get_width_height(), "RGBA")
+    surf = pygame.image.frombuffer(buffer, w_h, "RGBA")
+    screen.blit(surf, (map.width, 0))
+
+    plt.close() 
 
     pygame.display.flip()
 
