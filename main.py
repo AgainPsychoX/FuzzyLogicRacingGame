@@ -110,27 +110,11 @@ while running:
     for k, v in wall_ray_casts.items():
         v.draw(screen, pygame.Color(99, 20, 20), width=2)
 
-    draw_text(f'velocity={car.velocity:.1f}\n' +
-              'walls distances:\n' + 
-              '\n'.join([f'  {k}={v.distance if v.hit else "too far"}' 
-                         for k, v in wall_ray_casts.items()]), 
-              (0, 0), color=(255, 255, 255))
+    draw_text(f'FPS={clock.get_fps()}', (0, 0), color=(255, 255, 255))
 
-    # TODO: draw fuzzy controller graphs for variables activation
-    # mmmmmmm log V
-    # mmmmmmm L H R
-    # mmmmmmm G B S
-
-    # f.set_figheight(map.height / 100)
-    # f.set_figwidth(CHARTS_AREA_WIDTH / 100)
-
-    fig = fuzzy_car_controller.visualize()
+    fig = fuzzy_car_controller.visualize(width=CHARTS_AREA_WIDTH, height=map.height)
     canvas = agg.FigureCanvasAgg(fig)
-    # canvas.draw()
     buffer, w_h = canvas.print_to_buffer()
-    # renderer = canvas.get_renderer()
-    # raw_data = renderer.buffer_rgba()
-    # surf = pygame.image.frombuffer(raw_data, canvas.get_width_height(), "RGBA")
     surf = pygame.image.frombuffer(buffer, w_h, "RGBA")
     screen.blit(surf, (map.width, 0))
 

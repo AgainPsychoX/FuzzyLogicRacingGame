@@ -1,10 +1,19 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import skfuzzy
 import skfuzzy.control
 from skfuzzy.control.visualization import FuzzyVariableVisualizer
 
 from map import RayCastResult
 from car import Car, CarController
+
+class CustomFuzzyVariableVisualizer(FuzzyVariableVisualizer):
+    def __init__(self, fuzzy_var, fig, ax):
+        super().__init__(fuzzy_var)
+        plt.close() # close subplot created in default visualizer initializer
+        self.fig = fig
+        self.ax = ax
 
 class FuzzyCarController(CarController):
     def __init__(self, car: Car):
@@ -100,8 +109,20 @@ class FuzzyCarController(CarController):
         #   OR instead doing this here, have it in `main.py` loop or as function`
         pass
 
-    def visualize(self):
+    def visualize(self, width: float, height: float):
         velocity, left, head, right = self.inputs
         gas, brake, steer = self.outputs
-        fig, ax = FuzzyVariableVisualizer(velocity).view(sim=self.simulation)
+
+        dpi = 100 # assume it's default
+        fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+        gs = gridspec.GridSpec(3, 3, figure=fig)
+
+        CustomFuzzyVariableVisualizer(velocity, fig, plt.subplot(gs[0, 2])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(left,     fig, plt.subplot(gs[1, 0])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(head,     fig, plt.subplot(gs[1, 1])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(right,    fig, plt.subplot(gs[1, 2])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(gas,      fig, plt.subplot(gs[2, 0])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(brake,    fig, plt.subplot(gs[2, 1])).view(sim=self.simulation)
+        CustomFuzzyVariableVisualizer(steer,    fig, plt.subplot(gs[2, 2])).view(sim=self.simulation)
+
         return fig
