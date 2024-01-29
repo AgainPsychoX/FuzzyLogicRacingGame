@@ -28,56 +28,65 @@ class FuzzyCarController(CarController):
         velocity['FAST']    = skfuzzy.trapmf(velocity.universe, [50, 200, 200, 200])
 
         balance = skfuzzy.control.Antecedent(np.arange(-200, 200 + 1, 1), 'balance')
-        balance['LEFT']    = skfuzzy.trapmf(balance.universe, [-200, -200, -200, 0])
-        balance['CENTER']  = skfuzzy.trapmf(balance.universe, [-50, 0, 0, 50])
-        balance['RIGHT']   = skfuzzy.trapmf(balance.universe, [0, 200, 200, 200])
+        balance['LEFT']     = skfuzzy.trapmf(balance.universe, [-200, -200, -200, 0])
+        balance['CENTER']   = skfuzzy.trapmf(balance.universe, [-50, 0, 0, 50])
+        balance['RIGHT']    = skfuzzy.trapmf(balance.universe, [0, 200, 200, 200])
+
+        side = skfuzzy.control.Antecedent(np.arange(-200, 200 + 1, 1), 'side')
+        side['LEFT']    = skfuzzy.trapmf(side.universe, [-200, -200, -200, 0])
+        side['CENTER']  = skfuzzy.trapmf(side.universe, [-50, 0, 0, 50])
+        side['RIGHT']   = skfuzzy.trapmf(side.universe, [0, 200, 200, 200])
 
         head = skfuzzy.control.Antecedent(np.arange(0, 200 + 1, 1), 'head')
-        head['CLOSE']       = skfuzzy.trapmf(head.universe, [0,   0,   0, 150])
-        head['AWAY']        = skfuzzy.trapmf(head.universe, [100, 200, 200, 200])
+        head['CLOSE']   = skfuzzy.trapmf(head.universe, [ 0,  0,  50, 150])
+        head['AWAY']    = skfuzzy.trapmf(head.universe, [50, 200, 200, 200])
 
-        self.inputs = [velocity, balance, head]
+        self.inputs = [velocity, balance, side, head]
 
     def setup_outputs(self):
         gas = skfuzzy.control.Consequent(np.arange(0, 1 + 0.02, 0.02), 'gas')
         gas['NONE'] = skfuzzy.gaussmf(gas.universe, 0, 0.1)
         gas['SOFT'] = skfuzzy.gaussmf(gas.universe, 0.5, 0.1)
         gas['HARD'] = skfuzzy.gaussmf(gas.universe, 1, 0.1)
-        # gas.defuzzify_method = 'som'
+        gas.defuzzify_method = 'mom'
 
         brake = skfuzzy.control.Consequent(np.arange(0, 1 + 0.02, 0.02), 'brake')
         brake['NONE'] = skfuzzy.gaussmf(brake.universe, 0, 0.1)
         brake['SOFT'] = skfuzzy.gaussmf(brake.universe, 0.5, 0.1)
         brake['HARD'] = skfuzzy.gaussmf(brake.universe, 1, 0.1)
+        brake.defuzzify_method = 'mom'
 
         steer = skfuzzy.control.Consequent(np.arange(-1, 1 + 0.05, 0.05), 'steer')
         steer['RIGHT'] = skfuzzy.gaussmf(steer.universe, -1, 0.25)
         steer['NONE']  = skfuzzy.gaussmf(steer.universe, 0, 0.25)
         steer['LEFT']  = skfuzzy.gaussmf(steer.universe, 1, 0.25)
+        steer.defuzzify_method = 'mom'
 
         self.outputs = [gas, brake, steer]
 
     def setup_control_system(self):
         c = skfuzzy.control
-        velocity, balance, head = self.inputs
+        velocity, balance, side, head = self.inputs
         gas, brake, steer = self.outputs
 
         self.control_system = c.ControlSystem([
             c.Rule(balance['LEFT'], steer['RIGHT']),
             c.Rule(balance['RIGHT'], steer['LEFT']),
-            c.Rule(balance['CENTER'], steer['NONE']),
+            c.Rule(balance['CENTER'], steer['NONE'] % 0.1),
 
-            c.Rule(head['CLOSE'], brake['HARD']),
-            c.Rule(velocity['FAST'] & ~balance['CENTER'], brake['SOFT'] % 0.1),
+            c.Rule(side['LEFT'], steer['RIGHT']),
+            c.Rule(side['RIGHT'], steer['LEFT']),
 
-            c.Rule(balance['CENTER'] & head['AWAY'], (gas['HARD'], brake['NONE'])),
-            c.Rule(head['AWAY'] & velocity['SLOW'], (gas['SOFT'], brake['NONE'])),
-            c.Rule(~velocity['SLOW'], gas['NONE']),
+            c.Rule(head['CLOSE'], (brake['HARD'], gas['NONE'])),
+            c.Rule(head['AWAY'], (brake['NONE'], gas['SOFT'])),
+
+            c.Rule(velocity['SLOW'], gas['SOFT'] % 0.1),
         ])
 
     def update_simulation(self, sensors: dict[str, RayCastResult]):
         self.simulation.input['velocity'] = self.car.velocity
         self.simulation.input['balance'] = sensors['left'].distance - sensors['right'].distance
+        self.simulation.input['side'] = sensors['hard_left'].distance - sensors['hard_right'].distance
         self.simulation.input['head'] = sensors['head'].distance
         self.simulation.compute()
         self.gas = self.simulation.output['gas']
@@ -89,7 +98,7 @@ class FuzzyCarController(CarController):
         super().update(dt, *args, **kwargs)
 
     def setup_visualization(self, width: float, height: float):
-        velocity, balance, head = self.inputs
+        velocity, balance, side, head = self.inputs
         gas, brake, steer = self.outputs
 
         dpi = 100 # assume it's default
@@ -98,8 +107,9 @@ class FuzzyCarController(CarController):
 
         self.visualizers = [
             MyFuzzyVariableVisualizer(velocity, plt.subplot(gs[0, 2])),
-            MyFuzzyVariableVisualizer(balance,  plt.subplot(gs[1, 0])),
-            MyFuzzyVariableVisualizer(head,     plt.subplot(gs[1, 1])),
+            MyFuzzyVariableVisualizer(head,     plt.subplot(gs[1, 0])),
+            MyFuzzyVariableVisualizer(balance,  plt.subplot(gs[1, 1])),
+            MyFuzzyVariableVisualizer(side,     plt.subplot(gs[1, 2])),
             MyFuzzyVariableVisualizer(gas,      plt.subplot(gs[2, 0])),
             MyFuzzyVariableVisualizer(brake,    plt.subplot(gs[2, 1])),
             MyFuzzyVariableVisualizer(steer,    plt.subplot(gs[2, 2])),

@@ -55,6 +55,8 @@ sensors_angles = {
     'head': math.radians(0),
     'left': math.radians(30),
     'right': math.radians(-30),
+    'hard_left': math.radians(90),
+    'hard_right': math.radians(-90),
 }
 
 keyboard_car_controller = KeyboardCarController(car)
@@ -111,7 +113,8 @@ while running:
                 # TODO: add pull request to skfuzzy to fix this issue?
             except ValueError as error:
                 print('Further error printing out state:', error)
-            sleep(99)
+                print('inputs: ' + ' '.join([f'{v.label}={v.input["current"]}, ' for v in fuzzy_car_controller.inputs]))
+            sleep(0.100)
 
         car_controller.update(dt=dt)
         all_sprites.update(dt=dt)
