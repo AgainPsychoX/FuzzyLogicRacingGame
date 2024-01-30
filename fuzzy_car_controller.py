@@ -32,35 +32,45 @@ class FuzzyCarController(CarController):
         balance['CENTER']   = skfuzzy.trapmf(balance.universe, [-50, 0, 0, 50])
         balance['RIGHT']    = skfuzzy.trapmf(balance.universe, [0, 200, 200, 200])
 
-        side = skfuzzy.control.Antecedent(np.arange(-200, 200 + 1, 1), 'side')
-        side['LEFT']    = skfuzzy.trapmf(side.universe, [-200, -200, -200, 0])
-        side['CENTER']  = skfuzzy.trapmf(side.universe, [-50, 0, 0, 50])
-        side['RIGHT']   = skfuzzy.trapmf(side.universe, [0, 200, 200, 200])
+        side = skfuzzy.control.Antecedent(np.arange(-100, 100 + 1, 1), 'side')
+        side['LEFT']    = skfuzzy.trapmf(side.universe, [-100, -100, -100, 0])
+        side['CENTER']  = skfuzzy.trapmf(side.universe, [-25, 0, 0, 25])
+        side['RIGHT']   = skfuzzy.trapmf(side.universe, [0, 100, 100, 100])
 
         head = skfuzzy.control.Antecedent(np.arange(0, 200 + 1, 1), 'head')
         head['CLOSE']   = skfuzzy.trapmf(head.universe, [ 0,  0,  50, 150])
-        head['AWAY']    = skfuzzy.trapmf(head.universe, [50, 200, 200, 200])
+        head['AWAY']    = skfuzzy.trapmf(head.universe, [100, 200, 200, 200])
 
         self.inputs = [velocity, balance, side, head]
 
     def setup_outputs(self):
-        gas = skfuzzy.control.Consequent(np.arange(0, 1 + 0.02, 0.02), 'gas')
-        gas['NONE'] = skfuzzy.gaussmf(gas.universe, 0, 0.1)
-        gas['SOFT'] = skfuzzy.gaussmf(gas.universe, 0.5, 0.1)
-        gas['HARD'] = skfuzzy.gaussmf(gas.universe, 1, 0.1)
-        gas.defuzzify_method = 'mom'
+        gas = skfuzzy.control.Consequent(np.arange(0 - 0.25, 1 + 0.02 + 0.25, 0.02), 'gas')
+        # gas['NONE'] = skfuzzy.trapmf(gas.universe, [0, 0, 0, 0.1])
+        # gas['SOFT'] = skfuzzy.trapmf(gas.universe, [0, 0, 0, 1])
+        # gas['HARD'] = skfuzzy.trapmf(gas.universe, [0, 1, 1, 1])
+        gas['NONE'] = skfuzzy.gaussmf(gas.universe, 0, 0.05)
+        gas['SOFT'] = skfuzzy.gaussmf(gas.universe, 0, 0.25)
+        gas['HARD'] = skfuzzy.gaussmf(gas.universe, 1, 0.25)
+        # gas.defuzzify_method = 'mom'
 
-        brake = skfuzzy.control.Consequent(np.arange(0, 1 + 0.02, 0.02), 'brake')
-        brake['NONE'] = skfuzzy.gaussmf(brake.universe, 0, 0.1)
-        brake['SOFT'] = skfuzzy.gaussmf(brake.universe, 0.5, 0.1)
-        brake['HARD'] = skfuzzy.gaussmf(brake.universe, 1, 0.1)
-        brake.defuzzify_method = 'mom'
+        brake = skfuzzy.control.Consequent(np.arange(0 - 0.25, 1 + 0.02 + 0.25, 0.02), 'brake')
+        # brake['NONE'] = skfuzzy.trapmf(brake.universe, [0, 0, 0, 0.1])
+        # brake['SOFT'] = skfuzzy.trapmf(brake.universe, [0, 0, 0, 1])
+        # brake['HARD'] = skfuzzy.trapmf(brake.universe, [0, 1, 1, 1])
+        brake['NONE'] = skfuzzy.gaussmf(brake.universe, 0, 0.05)
+        brake['SOFT'] = skfuzzy.gaussmf(brake.universe, 0, 0.25)
+        brake['HARD'] = skfuzzy.gaussmf(brake.universe, 1, 0.25)
+        # brake.defuzzify_method = 'mom'
 
-        steer = skfuzzy.control.Consequent(np.arange(-1, 1 + 0.05, 0.05), 'steer')
+        # steer = skfuzzy.control.Consequent(np.arange(-1, 1 + 0.05, 0.05), 'steer')
+        steer = skfuzzy.control.Consequent(np.arange(-1 - 0.25, 1 + 0.05 + 0.25, 0.05), 'steer')
+        # steer['RIGHT'] = skfuzzy.trapmf(steer.universe, [-1, -1, -1, 0])
+        # steer['NONE']  = skfuzzy.trapmf(steer.universe, [-0.25, 0, 0, 0.25])
+        # steer['LEFT']  = skfuzzy.trapmf(steer.universe, [0, 1, 1, 1])
         steer['RIGHT'] = skfuzzy.gaussmf(steer.universe, -1, 0.25)
-        steer['NONE']  = skfuzzy.gaussmf(steer.universe, 0, 0.25)
-        steer['LEFT']  = skfuzzy.gaussmf(steer.universe, 1, 0.25)
-        steer.defuzzify_method = 'mom'
+        steer['NONE']  = skfuzzy.gaussmf(steer.universe,  0, 0.10)
+        steer['LEFT']  = skfuzzy.gaussmf(steer.universe,  1, 0.25)
+        # steer.defuzzify_method = 'mom'
 
         self.outputs = [gas, brake, steer]
 
@@ -72,13 +82,16 @@ class FuzzyCarController(CarController):
         self.control_system = c.ControlSystem([
             c.Rule(balance['LEFT'], steer['RIGHT']),
             c.Rule(balance['RIGHT'], steer['LEFT']),
-            c.Rule(balance['CENTER'], steer['NONE'] % 0.1),
+            c.Rule(balance['CENTER'] & side['CENTER'], steer['NONE'] % 0.1),
 
             c.Rule(side['LEFT'], steer['RIGHT']),
             c.Rule(side['RIGHT'], steer['LEFT']),
 
+            # c.Rule(~velocity['SLOW'] & head['CLOSE'], (brake['HARD'], gas['NONE'])),
+            # c.Rule(velocity['SLOW'] & head['CLOSE'], (brake['NONE'], gas['NONE'])),
             c.Rule(head['CLOSE'], (brake['HARD'], gas['NONE'])),
-            c.Rule(head['AWAY'], (brake['NONE'], gas['SOFT'])),
+            c.Rule(head['AWAY'] & balance['CENTER'], (brake['NONE'], gas['HARD'])),
+            c.Rule(head['AWAY'] & ~balance['CENTER'], (brake['NONE'], gas['SOFT'])),
 
             c.Rule(velocity['SLOW'], gas['SOFT'] % 0.1),
         ])

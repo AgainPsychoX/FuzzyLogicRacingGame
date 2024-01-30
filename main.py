@@ -93,6 +93,7 @@ while running:
             if event.key == pygame.K_s:
                 if paused:
                     do_step = True
+                    dt = 1 / 30 # constant step for testing
             if event.key == pygame.K_v:
                 visualizing = not visualizing
                 sleep(0.100)
