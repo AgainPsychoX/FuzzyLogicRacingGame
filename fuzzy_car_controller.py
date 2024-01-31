@@ -23,9 +23,9 @@ class FuzzyCarController(CarController):
 
     def setup_inputs(self):
         velocity = skfuzzy.control.Antecedent(np.arange(0, 200 + 1, 1), 'velocity')
-        velocity['SLOW']    = skfuzzy.trapmf(velocity.universe, [0,    0,   0, 50])
+        velocity['SLOW']    = skfuzzy.trapmf(velocity.universe, [0,    0,   0, 75])
         velocity['MEDIUM']  = skfuzzy.trapmf(velocity.universe, [50, 100, 100, 150])
-        velocity['FAST']    = skfuzzy.trapmf(velocity.universe, [50, 200, 200, 200])
+        velocity['FAST']    = skfuzzy.trapmf(velocity.universe, [75, 200, 200, 200])
 
         balance = skfuzzy.control.Antecedent(np.arange(-200, 200 + 1, 1), 'balance')
         balance['LEFT']     = skfuzzy.trapmf(balance.universe, [-200, -200, -200, 0])
@@ -99,7 +99,7 @@ class FuzzyCarController(CarController):
         velocity, balance, side, head = self.inputs
         gas, brake, steer = self.outputs
 
-        dpi = 100 # assume it's default
+        dpi = 67
         fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
         gs = gridspec.GridSpec(3, 3, figure=fig)
 
