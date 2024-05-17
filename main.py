@@ -24,7 +24,7 @@ MAX_HEIGHT = 900
 CHARTS_AREA_WIDTH = 600
 
 map = Map('maps/1.png', MAX_WIDTH - CHARTS_AREA_WIDTH, MAX_HEIGHT) 
-map.default_wall_condition = lambda x_y, map : map.surface.get_at(x_y)[1] > 100 # green
+map.default_wall_condition = lambda x_y, map : map.surface.get_at((int(x_y[0]), int(x_y[1])))[1] > 100 # green
 
 screen = pygame.display.set_mode((map.width + CHARTS_AREA_WIDTH, map.height))
 pygame.display.set_caption("Fuzzy Racing Game")
