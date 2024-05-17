@@ -1,3 +1,4 @@
+import os
 from time import sleep
 import pygame
 import sys
@@ -13,7 +14,15 @@ from map import Map
 from car import Car, CarController
 from keyboard_car_controller import KeyboardCarController
 
-matplotlib.use("Agg")
+def get_env_boolean(key: str, default: bool) -> bool:
+    return os.getenv(key, 'y' if default else 'n').lower()[0] in ('t', '1', 'y')
+
+USE_PYGAME_MATPLOTLIB_BACKEND = get_env_boolean('USE_PYGAME_MATPLOTLIB_BACKEND', False)
+
+if USE_PYGAME_MATPLOTLIB_BACKEND:
+    matplotlib.use('module://pygame_matplotlib.backend_pygame')
+else:
+    matplotlib.use('Agg')
 
 pygame.init()
 pygame.font.init()
@@ -136,9 +145,13 @@ while running:
 
     if visualizing:
         fig = fuzzy_car_controller.visualize(width=CHARTS_AREA_WIDTH, height=map.height)
-        canvas = agg.FigureCanvasAgg(fig)
-        buffer, w_h = canvas.print_to_buffer()
-        surf = pygame.image.frombuffer(buffer, w_h, "RGBA")
+        if USE_PYGAME_MATPLOTLIB_BACKEND:
+            fig.canvas.draw()
+            surf = fig
+        else:
+            canvas = agg.FigureCanvasAgg(fig)
+            buffer, w_h = canvas.print_to_buffer()
+            surf = pygame.image.frombuffer(buffer, w_h, "RGBA")
         screen.blit(surf, (map.width, 0))
     else:
         pygame.draw.rect(screen, (0, 0, 0), (map.width, 0, CHARTS_AREA_WIDTH, map.height))

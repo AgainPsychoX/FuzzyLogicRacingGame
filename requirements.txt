@@ -3,3 +3,4 @@ matplotlib~=3.8.2
 numpy~=1.26.3
 pygame-ce~=2.4.0
 scikit-fuzzy @ git+https://github.com/scikit-fuzzy/scikit-fuzzy.git@d7551b649f34c2f5e98836e9b502279226d3b225
+pygame-matplotlib~=0.4
