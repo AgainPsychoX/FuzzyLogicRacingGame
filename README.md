@@ -3,7 +3,18 @@
 
 The project tries to apply fuzzy logic to control car in simple racing game.
 
-![alt text](docs/image.png)
+![Screenshot form the game, including graphs](docs/image.png)
+
+
+
+### Controls
+
++ <kbd>C</kbd> – switch the vehicle controller between the keyboard (user) and the fuzzy controller.
++ <kbd>P</kbd> – pause the controller.
++ <kbd>S</kbd> – execute of one simulation step during pause (1 frame assuming 30 frames per second). At each step, the state of the fuzzy controller is also written to the output (console).
++ <kbd>V</kbd> – toggle drawing graphs to illustrate the operation of controller rules.
++ <kbd>Q</kbd> – exit from the program.
++ Arrows (<kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><kbd>←</kbd>) and spacebar (<kbd> </kbd>) – vehicle control when the keyboard controller is active.
 
 
 
