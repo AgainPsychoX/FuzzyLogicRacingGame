@@ -3,6 +3,8 @@
 
 The project tries to apply fuzzy logic to control car in simple racing game.
 
+![alt text](docs/image.png)
+
 
 
 ### To-do
